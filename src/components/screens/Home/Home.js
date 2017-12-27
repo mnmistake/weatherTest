@@ -6,109 +6,119 @@ import React, {Component} from 'react';
 import {
     Text,
     View,
-    FlatList,
-    ActivityIndicator,
-    TouchableHighlight,
-    AsyncStorage,
     TouchableOpacity,
     Image,
-    Platform
+    Alert,
 } from 'react-native';
 
-import MainStyles from '../../../styles/main';
+import {ApiHost} from '../../../config/variables';
+import {Location, Permissions} from 'expo';
 import LocalStyles from './styles/local';
-
-import BaseModel from '../../../core/BaseModel';
 
 export default class Home extends Component {
     state = {
-        city:'',
-        state:'',
-        currentDegrees:'',
-        humidity:'',
-        rain:''
+        timeZone: '',
+        state: '',
+        temperature: '',
+        currentDegrees: '',
+        humidity: '',
+        rain: '',
+        locationResult: null,
     };
 
-    constructor(props){
+    constructor(props) {
         super(props)
     }
 
-    componentDidMount(){
-        this.alertIfRemoteNotificationsDisabledAsync().then(() => console.log("permissionssss"))
-
-        let weatherData = {};
-        BaseModel.get(`-0.180653,-78.467838`).then((data) => console.log(data));
-        return {weatherData}
+    componentDidMount() {
+        this._getLocationAndWeatherAsync().then(() => console.log("_getLocationAsync done!"))
     }
 
-    alertIfRemoteNotificationsDisabledAsync = async () =>{
-        const { Permissions } = Expo;
-        const { status } = await Permissions.getAsync(Permissions.LOCATION);
+    _getLocationAndWeatherAsync = async () => {
+        let {status} = await Permissions.askAsync(Permissions.LOCATION);
         if (status !== 'granted') {
-            alert('Hey! You might want to enable notifications for my app, they are good.');
+            this.setState({
+                locationResult: 'no location permition',
+            });
+            Alert.alert(
+                'Alert',
+                'No hay acceso a la locacion',
+                [
+                    {text: 'Cancel', onPress: () => console.log('Cancel Pressed'), style: 'cancel'},
+                    {text: 'OK', onPress: () => console.log('OK Pressessd')},
+                ],
+                {cancelable: false}
+            )
         }
+        let location = await Location.getCurrentPositionAsync({});
+        let response = await fetch(ApiHost + `${location.coords.latitude},${location.coords.longitude}`);
+        if (response) {
+            let json = await response.json()
+            this.setState({
+                humidity: json.currently.humidity,
+                rain: json.currently.precipProbability,
+                temperature: json.currently.temperature,
+                timeZone: json.timezone
+            });
+        }
+        this.setState({locationResult: JSON.stringify(location)});
     };
 
+    render() {
+        const {temperature, humidity, rain, timeZone, locationResult} = this.state;
 
+        if (locationResult) {
+            return (
+                <View style={LocalStyles.containerMain}>
+                    <View style={LocalStyles.row}>
+                        <TouchableOpacity onPress={this._getLocationAndWeatherAsync()} style={LocalStyles.reloadButton}>
+                            <Image
+                                style={LocalStyles.button}
+                                source={require('../../../../resources/Home/reload.png')}
+                            />
+                        </TouchableOpacity>
+                    </View>
 
-
-_onPressReload = async () => {
-        let weatherData = {};
-        let response = await BaseModel.get(`-0.180653,-78.467838`);
-        if (response){
-            weatherData = response.data
-        }
-        return {weatherData}
-    };
-
-    static async getInitialProps(){
-        let weatherData = {};
-        let response = await BaseModel.get(`${-0},${-0}`);
-        if (response){
-            weatherData = response.data
-        }
-
-        return {weatherData}
-    }
-
-    render(){
-
-        return(
-            <View style={LocalStyles.containerMain}>
-                <View style={LocalStyles.row}>
-                    <TouchableOpacity onPress={this._onPressReload} style={LocalStyles.reloadButton}>
+                    <View style={LocalStyles.row}>
                         <Image
                             style={LocalStyles.button}
-                            source={require('../../../../resources/Home/reload.png')}
+                            source={require('../../../../resources/Home/circle.png')}
                         />
-                    </TouchableOpacity>
-                </View>
+                        <Text style={LocalStyles.city}> {timeZone}</Text>
+                        <Text style={LocalStyles.state}/>
 
-                <View style={LocalStyles.row}>
-                    <Image
-                        style={LocalStyles.button}
-                        source={require('../../../../resources/Home/circle.png')}
-                    />
-                    <Text style={LocalStyles.city}> Alcatraz Island,</Text>
-                    <Text style={LocalStyles.state}> CA </Text>
-
-                </View>
-
-                <View style={LocalStyles.degreeRow}>
-                    <Text style={LocalStyles.degrees}> 90 </Text>
-                </View>
-
-                <View style={LocalStyles.row}>
-                    <View style={LocalStyles.column}>
-                        <Text style={LocalStyles.humidity}> HUMIDITY </Text>
-                        <Text style={LocalStyles.humidityLabel}> 100% </Text>
                     </View>
-                    <View style={LocalStyles.column}>
-                        <Text style={LocalStyles.rain}> RAIN </Text>
-                        <Text style={LocalStyles.rainLabel}> 100% </Text>
+
+                    <View style={LocalStyles.degreeRow}>
+                        <Text style={LocalStyles.degrees}> {Math.round(parseInt(temperature) * 10) / 10} °</Text>
+                    </View>
+
+                    <View style={LocalStyles.row}>
+                        <View style={LocalStyles.column}>
+                            <Text style={LocalStyles.humidity}> HUMIDITY </Text>
+                            <Text style={LocalStyles.humidityLabel}> {humidity} % </Text>
+                        </View>
+                        <View style={LocalStyles.column}>
+                            <Text style={LocalStyles.rain}> RAIN </Text>
+                            <Text style={LocalStyles.rainLabel}> {rain} % </Text>
+                        </View>
                     </View>
                 </View>
-            </View>
-        )
+            )
+        } else {
+            return (
+                <View style={{
+                    flex: 1,
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                }}>
+                    <View style={{width: '100%', height: '100%', backgroundColor: '#4A8DDD',justifyContent: 'center',
+                        alignItems: 'center',}}>
+                        <Text style={{fontSize: 20, color: '#fff' , fontWeight: 'bold'}}> CARGANDO </Text>
+                    </View>
+                </View>
+            )
+        }
     }
 }

@@ -50,7 +50,7 @@ const LocalStyles = StyleSheet.create({
         fontWeight: 'bold'
     },
     degrees: {
-        fontSize: 120,
+        fontSize: 80,
         color: '#fff',
         fontWeight: 'bold'
     },

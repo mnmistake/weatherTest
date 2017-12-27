@@ -1,7 +1,6 @@
 /**
  * Created by MnMistake on 9/27/2017.
  */
-'use strict';
 
 import React from 'react';
 
@@ -10,7 +9,7 @@ import { ApiHost } from '../config/variables';
 let requestServerError = 'We couldn\'t connect to the server. Please try later';
 
 let BaseModel = {
-    get(resource) {
+    async get(resource) {
         let options = {
             method: 'GET',
             headers: {
@@ -19,13 +18,14 @@ let BaseModel = {
             }
         };
 
-        fetch(ApiHost + resource, options).then((data)=> {
-            return(data)
-        }).catch(
-            error => {
-                throw requestServerError;
-            }
-        );
+        fetch(ApiHost+resource, options)
+            .then(function(response) {
+                return response.json()
+            }).then(function(json) {
+            return json;
+        }).catch(function(ex) {
+            console.log('parsing failed', ex)
+        });
     },
 };
 

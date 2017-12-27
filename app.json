@@ -8,7 +8,8 @@
     "orientation": "portrait",
     "scheme": "weatherTest",
     "android": {
-      "package": "com.todouno.weatherTest"
+      "package": "com.todouno.weatherTest",
+      "permissions":["ACCESS_FINE_LOCATION","ACCESS_COARSE_LOCATION"]
     }
   }
 }
