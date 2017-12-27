@@ -1,0 +1,14 @@
+{
+  "expo": {
+    "sdkVersion": "21.0.0",
+    "name": "weatherTest",
+    "icon": "resources/weatherTestIcon.png",
+    "version": "1.0.0",
+    "slug": "weatherTest",
+    "orientation": "portrait",
+    "scheme": "weatherTest",
+    "android": {
+      "package": "com.todouno.weatherTest"
+    }
+  }
+}
